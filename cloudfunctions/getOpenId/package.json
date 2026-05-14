@@ -1,0 +1,9 @@
+{
+  "name": "getOpenId",
+  "version": "1.0.0",
+  "description": "获取用户openid，首次登录自动创建店铺记录",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}
