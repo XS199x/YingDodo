@@ -52,99 +52,130 @@ export default {
       try {
         uni.showLoading({ title: '生成海报中...' })
 
-        const [detailRes, posterRes] = await Promise.all([
-          getActivityDetail(this.activityId),
-          generatePoster(this.activityId)
-        ])
+        const detailRes = await getActivityDetail(this.activityId)
 
         if (detailRes.code === 0) {
           this.activity = detailRes.data
-        }
-        if (posterRes.code === 0) {
-          this.posterData = posterRes.data.posterData
+        } else {
+          throw new Error('获取活动详情失败')
         }
 
+        this.buildPosterData()
+        
         await this.drawPoster()
         uni.hideLoading()
       } catch (e) {
+        console.error('生成海报失败:', e)
         uni.hideLoading()
+        this.posterReady = true
         uni.showToast({ title: '生成失败，请重试', icon: 'none' })
       }
     },
-    async drawPoster() {
-      const ctx = uni.createCanvasContext('posterCanvas')
-      const w = this.canvasWidth
-      const h = this.canvasHeight
-
-      ctx.setFillStyle('#FFFFFF')
-      ctx.fillRect(0, 0, w, h)
-
-      ctx.setFillStyle('#FF6B35')
-      ctx.fillRect(0, 0, w, 80)
-
-      ctx.setFillStyle('#FFFFFF')
-      ctx.setFontSize(20)
-      ctx.setTextAlign('center')
-      ctx.fillText(this.posterData?.shopName || '我的店铺', w / 2, 50)
-
-      ctx.setFillStyle('#333333')
-      ctx.setFontSize(18)
-      ctx.setTextAlign('center')
-      const title = this.posterData?.activityTitle || '精彩活动'
-      ctx.fillText(title.length > 12 ? title.slice(0, 12) + '...' : title, w / 2, 130)
-
-      ctx.setFillStyle('#666666')
-      ctx.setFontSize(13)
-      const desc = this.posterData?.activityDesc || ''
-      if (desc) {
-        ctx.fillText(desc.length > 20 ? desc.slice(0, 20) + '...' : desc, w / 2, 160)
-      }
-
-      ctx.setStrokeStyle('#EEEEEE')
-      ctx.setLineWidth(1)
-      ctx.moveTo(30, 190)
-      ctx.lineTo(w - 30, 190)
-      ctx.stroke()
-
-      const config = this.posterData?.config || {}
-      const configKeys = Object.keys(config)
-      let yPos = 220
-      ctx.setFillStyle('#333333')
-      ctx.setFontSize(14)
-      ctx.setTextAlign('left')
-
-      configKeys.forEach(key => {
-        if (yPos < h - 100) {
-          ctx.fillText(`${key}: ${config[key]}`, 30, yPos)
-          yPos += 28
+    buildPosterData() {
+      const config = this.activity.config || {}
+      const displayConfig = {}
+      
+      const templateInfo = getTemplateConfig(this.activity.template_type) || {}
+      const fields = templateInfo.fields || []
+      
+      fields.forEach(f => {
+        if (config[f.key]) {
+          displayConfig[f.label] = config[f.key]
         }
       })
 
-      ctx.setFillStyle('#FF6B35')
-      ctx.fillRect(30, h - 70, w - 60, 40)
+      this.posterData = {
+        shopName: this.$store.state.shopInfo?.name || '我的店铺',
+        activityTitle: this.activity.title || '精彩活动',
+        activityDesc: this.activity.desc || '',
+        config: displayConfig
+      }
+    },
+    async drawPoster() {
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('海报绘制超时'))
+        }, 10000)
 
-      ctx.setFillStyle('#FFFFFF')
-      ctx.setFontSize(16)
-      ctx.setTextAlign('center')
-      ctx.fillText('扫码参与活动', w / 2, h - 42)
+        const ctx = uni.createCanvasContext('posterCanvas')
+        const w = this.canvasWidth
+        const h = this.canvasHeight
 
-      ctx.setFillStyle('#999999')
-      ctx.setFontSize(11)
-      ctx.fillText('长按识别二维码 · 了解更多', w / 2, h - 15)
+        ctx.setFillStyle('#FFFFFF')
+        ctx.fillRect(0, 0, w, h)
 
-      ctx.draw(false, () => {
-        setTimeout(() => {
-          uni.canvasToTempFilePath({
-            canvasId: 'posterCanvas',
-            success: (res) => {
-              this.posterUrl = res.tempFilePath
-              this.posterReady = true
-            },
-            fail: () => {
-              this.posterReady = true
-            }
-          })
-        }, 500)
+        ctx.setFillStyle('#FF6B35')
+        ctx.fillRect(0, 0, w, 80)
+
+        ctx.setFillStyle('#FFFFFF')
+        ctx.setFontSize(20)
+        ctx.setTextAlign('center')
+        ctx.fillText(this.posterData?.shopName || '我的店铺', w / 2, 50)
+
+        ctx.setFillStyle('#333333')
+        ctx.setFontSize(18)
+        ctx.setTextAlign('center')
+        const title = this.posterData?.activityTitle || '精彩活动'
+        ctx.fillText(title.length > 12 ? title.slice(0, 12) + '...' : title, w / 2, 130)
+
+        ctx.setFillStyle('#666666')
+        ctx.setFontSize(13)
+        const desc = this.posterData?.activityDesc || ''
+        if (desc) {
+          ctx.fillText(desc.length > 20 ? desc.slice(0, 20) + '...' : desc, w / 2, 160)
+        }
+
+        ctx.setStrokeStyle('#EEEEEE')
+        ctx.setLineWidth(1)
+        ctx.moveTo(30, 190)
+        ctx.lineTo(w - 30, 190)
+        ctx.stroke()
+
+        const config = this.posterData?.config || {}
+        const configKeys = Object.keys(config)
+        let yPos = 220
+        ctx.setFillStyle('#333333')
+        ctx.setFontSize(14)
+        ctx.setTextAlign('left')
+
+        configKeys.forEach(key => {
+          if (yPos < h - 100) {
+            ctx.fillText(`${key}: ${config[key]}`, 30, yPos)
+            yPos += 28
+          }
+        })
+
+        ctx.setFillStyle('#FF6B35')
+        ctx.fillRect(30, h - 70, w - 60, 40)
+
+        ctx.setFillStyle('#FFFFFF')
+        ctx.setFontSize(16)
+        ctx.setTextAlign('center')
+        ctx.fillText('扫码参与活动', w / 2, h - 42)
+
+        ctx.setFillStyle('#999999')
+        ctx.setFontSize(11)
+        ctx.fillText('长按识别二维码 · 了解更多', w / 2, h - 15)
+
+        ctx.draw(false, () => {
+          setTimeout(() => {
+            uni.canvasToTempFilePath({
+              canvasId: 'posterCanvas',
+              success: (res) => {
+                clearTimeout(timeout)
+                this.posterUrl = res.tempFilePath
+                this.posterReady = true
+                resolve()
+              },
+              fail: (err) => {
+                clearTimeout(timeout)
+                console.error('canvasToTempFilePath failed:', err)
+                this.posterReady = true
+                reject(new Error('生成图片失败'))
+              }
+            })
+          }, 500)
+        })
       })
     },
     savePoster() {
