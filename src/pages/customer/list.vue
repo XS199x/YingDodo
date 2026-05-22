@@ -10,6 +10,17 @@
       <text class="search-btn" @click="searchCustomers">搜索</text>
     </view>
 
+    <view class="action-bar">
+      <view class="action-item" @click="goTags">
+        <text class="action-icon">🏷️</text>
+        <text class="action-text">标签管理</text>
+      </view>
+      <view class="action-item" @click="goGroupCode">
+        <text class="action-icon">📱</text>
+        <text class="action-text">群活码</text>
+      </view>
+    </view>
+
     <view class="stats-bar flex-between">
       <text class="stats-text">共 <text class="text-primary">{{ total }}</text> 位客户</text>
     </view>
@@ -121,6 +132,16 @@ export default {
       uni.navigateTo({
         url: `/pages/customer/detail?id=${id}`
       })
+    },
+    goTags() {
+      uni.navigateTo({
+        url: '/pages/customer/tags'
+      })
+    },
+    goGroupCode() {
+      uni.navigateTo({
+        url: '/pages/customer/group-code'
+      })
     }
   }
 }
@@ -147,6 +168,33 @@ export default {
     font-size: $font-size-base;
     color: $primary-color;
     font-weight: 500;
+  }
+}
+
+.action-bar {
+  display: flex;
+  gap: 16rpx;
+  padding: 0 20rpx 20rpx;
+  background: $bg-white;
+
+  .action-item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 80rpx;
+    background: $bg-color;
+    border-radius: $radius-base;
+
+    .action-icon {
+      font-size: 32rpx;
+      margin-right: 8rpx;
+    }
+
+    .action-text {
+      font-size: $font-size-sm;
+      color: $text-color;
+    }
   }
 }
 

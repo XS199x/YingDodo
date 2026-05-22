@@ -1,76 +1,202 @@
+import { errorHandler, createError, ERROR_CODES } from './errorHandler.js'
+
 const db = wx.cloud.database()
 const _ = db.command
 
-function callFunction(name, data = {}) {
-  return wx.cloud.callFunction({ name, data }).then(res => res.result)
+async function callFunction(name, data = {}) {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      const error = createError(ERROR_CODES.TIMEOUT, '云函数调用超时')
+      errorHandler.captureError(error, { action: name, params: data })
+      reject(error)
+    }, 10000)
+
+    wx.cloud.callFunction({ name, data })
+      .then(res => {
+        clearTimeout(timeout)
+        const result = res.result
+        
+        if (result && result.code !== undefined) {
+          if (result.code === 0) {
+            resolve(result)
+          } else {
+            const error = createError(ERROR_CODES.BUSINESS_ERROR, result.message || '操作失败')
+            errorHandler.captureError(error, { action: name, params: data })
+            reject(error)
+          }
+        } else {
+          resolve(result)
+        }
+      })
+      .catch(err => {
+        clearTimeout(timeout)
+        let error
+        
+        if (err.errMsg && err.errMsg.includes('timeout')) {
+          error = createError(ERROR_CODES.TIMEOUT, '请求超时')
+        } else if (err.errMsg && err.errMsg.includes('auth')) {
+          error = createError(ERROR_CODES.AUTH_ERROR, '授权失败')
+        } else {
+          error = createError(ERROR_CODES.NETWORK_ERROR, err.message || '网络错误')
+        }
+        
+        errorHandler.captureError(error, { action: name, params: data })
+        reject(error)
+      })
+  })
 }
 
-export function getOpenId() {
-  return callFunction('getOpenId')
+export async function getOpenId() {
+  try {
+    return await callFunction('getOpenId')
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
-export function getActivities(status) {
-  return callFunction('activityManager', { action: 'list', status })
+export async function getActivities(status) {
+  try {
+    return await callFunction('activityManager', { action: 'list', status })
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
-export function getActivityDetail(id) {
-  return callFunction('activityManager', { action: 'detail', id })
+export async function getActivityDetail(id) {
+  try {
+    return await callFunction('activityManager', { action: 'detail', id })
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
-export function createActivity(data) {
-  return callFunction('activityManager', { action: 'create', data })
+export async function createActivity(data) {
+  try {
+    return await callFunction('activityManager', { action: 'create', data })
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
-export function updateActivity(id, data) {
-  return callFunction('activityManager', { action: 'update', id, data })
+export async function updateActivity(id, data) {
+  try {
+    return await callFunction('activityManager', { action: 'update', id, data })
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
-export function deleteActivity(id) {
-  return callFunction('activityManager', { action: 'delete', id })
+export async function deleteActivity(id) {
+  try {
+    return await callFunction('activityManager', { action: 'delete', id })
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
-export function endActivity(id) {
-  return callFunction('activityManager', { action: 'end', id })
+export async function endActivity(id) {
+  try {
+    return await callFunction('activityManager', { action: 'end', id })
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
-export function getCustomers(params = {}) {
-  return callFunction('customerManager', { action: 'list', ...params })
+export async function getCustomers(params = {}) {
+  try {
+    return await callFunction('customerManager', { action: 'list', ...params })
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
-export function getCustomerDetail(id) {
-  return callFunction('customerManager', { action: 'detail', id })
+export async function getCustomerDetail(id) {
+  try {
+    return await callFunction('customerManager', { action: 'detail', id })
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
-export function updateCustomerTags(id, tags) {
-  return callFunction('customerManager', { action: 'updateTags', id, tags })
+export async function updateCustomerTags(id, tags) {
+  try {
+    return await callFunction('customerManager', { action: 'updateTags', id, tags })
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
-export function updateCustomerPhone(id, phone) {
-  return callFunction('customerManager', { action: 'updatePhone', id, phone })
+export async function updateCustomerPhone(id, phone) {
+  try {
+    return await callFunction('customerManager', { action: 'updatePhone', id, phone })
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
-export function getActivityStats(activityId) {
-  return callFunction('statsManager', { action: 'activityStats', activityId })
+export async function getActivityStats(activityId) {
+  try {
+    return await callFunction('statsManager', { action: 'activityStats', activityId })
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
-export function getOverviewStats() {
-  return callFunction('statsManager', { action: 'overview' })
+export async function getOverviewStats() {
+  try {
+    return await callFunction('statsManager', { action: 'overview' })
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
-export function generatePoster(activityId, templateType) {
-  return callFunction('posterGenerator', { activityId, templateType })
+export async function generatePoster(activityId, templateType) {
+  try {
+    return await callFunction('posterGenerator', { activityId, templateType })
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
-export function recordCustomerAction(activityId, actionType) {
-  return callFunction('statsManager', { action: 'record', activityId, actionType })
+export async function recordCustomerAction(activityId, actionType) {
+  try {
+    return await callFunction('statsManager', { action: 'record', activityId, actionType })
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
-export function getShopConfig() {
-  return callFunction('getOpenId', { action: 'getShop' })
+export async function getShopConfig() {
+  try {
+    return await callFunction('getOpenId', { action: 'getShop' })
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
-export function updateShopConfig(data) {
-  return callFunction('getOpenId', { action: 'updateShop', data })
+export async function updateShopConfig(data) {
+  try {
+    return await callFunction('getOpenId', { action: 'updateShop', data })
+  } catch (error) {
+    errorHandler.showError(error)
+    throw error
+  }
 }
 
 export default {

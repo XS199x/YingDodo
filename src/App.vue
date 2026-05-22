@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { onLaunch, onShow, onHide } from "@dcloudio/uni-app";
 import { useStore } from "vuex";
+import { errorHandler, createError, ERROR_CODES } from "./common/errorHandler.js";
 
 const store = useStore();
 
 onLaunch(() => {
   initCloud();
+  initGlobalErrorHandler();
 });
 
 onShow(() => {
@@ -35,9 +37,43 @@ async function checkLogin() {
       store.commit("SET_USER_INFO", res.result.data);
       store.commit("SET_SHOP_INFO", res.result.shopInfo);
     }
-  } catch (e) {
+  } catch (e: any) {
+    const error = createError(ERROR_CODES.NETWORK_ERROR, e.message || "登录失败");
+    errorHandler.captureError(error, { action: 'checkLogin' });
     console.error("登录失败:", e);
   }
+}
+
+function initGlobalErrorHandler() {
+  const originalError = console.error;
+  console.error = function(...args: any[]) {
+    originalError.apply(console, args);
+    
+    try {
+      const message = args.map(arg => 
+        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+      ).join(' ');
+      
+      const error = createError(ERROR_CODES.BUSINESS_ERROR, message);
+      errorHandler.captureError(error, { action: 'console.error' });
+    } catch (e) {
+      originalError('Error handler error:', e);
+    }
+  };
+
+  const originalReject = Promise.prototype.then;
+  Promise.prototype.then = function(onFulfilled, onRejected) {
+    return originalReject.call(this, onFulfilled, (reason: any) => {
+      if (reason && (reason instanceof Error || reason.message)) {
+        const error = createError(ERROR_CODES.BUSINESS_ERROR, reason.message || 'Promise rejected');
+        errorHandler.captureError(error, { action: 'Promise.reject' });
+      }
+      if (onRejected) {
+        return onRejected(reason);
+      }
+      throw reason;
+    });
+  };
 }
 </script>
 

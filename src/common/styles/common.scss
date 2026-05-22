@@ -105,6 +105,11 @@ $shadow-card: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
   margin-right: 12rpx;
   margin-bottom: 12rpx;
 
+  &.tag-sm {
+    padding: 4rpx 12rpx;
+    font-size: 20rpx;
+  }
+
   &.tag-primary {
     background: #FFF5F0;
     color: $primary-color;

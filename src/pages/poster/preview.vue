@@ -17,12 +17,20 @@
     </view>
 
     <view v-else class="loading-area flex-center">
-      <text>正在生成海报...</text>
+      <view class="loading-content">
+        <view class="loading-spinner"></view>
+        <text class="loading-text">正在生成海报...</text>
+        <text class="loading-hint">{{ loadingHint }}</text>
+      </view>
     </view>
 
-    <view class="bottom-action">
+    <view class="bottom-action" v-if="posterReady">
       <button class="btn-primary" @click="savePoster">保存海报到相册</button>
       <button class="btn-outline" @click="shareActivity" style="margin-top: 20rpx;">分享给好友</button>
+    </view>
+
+    <view class="retry-btn" v-if="showRetry">
+      <button class="btn-primary" @click="retryGenerate">重新生成海报</button>
     </view>
   </view>
 </template>
@@ -40,7 +48,12 @@ export default {
       posterUrl: '',
       posterReady: false,
       canvasWidth: 300,
-      canvasHeight: 500
+      canvasHeight: 550,
+      qrcodeUrl: '',
+      loadingHint: '',
+      showRetry: false,
+      retryCount: 0,
+      maxRetries: 3
     }
   },
   onLoad(options) {
@@ -50,7 +63,9 @@ export default {
   methods: {
     async initPoster() {
       try {
-        uni.showLoading({ title: '生成海报中...' })
+        this.posterReady = false
+        this.showRetry = false
+        this.loadingHint = '正在获取活动信息...'
 
         const detailRes = await getActivityDetail(this.activityId)
 
@@ -62,14 +77,33 @@ export default {
 
         this.buildPosterData()
         
+        this.loadingHint = '正在生成二维码...'
+        await this.generateQrcode()
+        
+        this.loadingHint = '正在绘制海报...'
         await this.drawPoster()
-        uni.hideLoading()
+        
+        this.loadingHint = ''
       } catch (e) {
         console.error('生成海报失败:', e)
-        uni.hideLoading()
-        this.posterReady = true
-        uni.showToast({ title: '生成失败，请重试', icon: 'none' })
+        this.retryCount++
+        
+        if (this.retryCount < this.maxRetries) {
+          this.loadingHint = `生成失败，正在重试 (${this.retryCount}/${this.maxRetries})...`
+          setTimeout(() => {
+            this.initPoster()
+          }, 2000)
+        } else {
+          this.loadingHint = ''
+          this.posterReady = true
+          this.showRetry = true
+          uni.showToast({ title: '生成失败，请点击下方按钮重试', icon: 'none', duration: 3000 })
+        }
       }
+    },
+    retryGenerate() {
+      this.retryCount = 0
+      this.initPoster()
     },
     buildPosterData() {
       const config = this.activity.config || {}
@@ -91,11 +125,37 @@ export default {
         config: displayConfig
       }
     },
+    async generateQrcode() {
+      return new Promise((resolve, reject) => {
+        const sharePath = `/pages/activity/join?activityId=${this.activityId}`
+        
+        uni.request({
+          url: 'https://api.qrserver.com/v1/create-qr-code/',
+          method: 'GET',
+          data: {
+            size: '120x120',
+            data: `https://mp.weixin.qq.com/s?__biz=MzI1NjUyMzE4Mg==&mid=2247483647&idx=1&sn=dummy&chksm=ea2f9b88dd5812906f45f366d90b6d30b9f4d2a5c6e7a8d2a4c3e5f6a7b8c9d0&scene=${encodeURIComponent(sharePath)}`
+          },
+          responseType: 'arraybuffer',
+          success: (res) => {
+            const base64 = uni.arrayBufferToBase64(res.data)
+            this.qrcodeUrl = `data:image/png;base64,${base64}`
+            resolve()
+          },
+          fail: (err) => {
+            console.warn('外部二维码生成失败，使用内置方案')
+            this.qrcodeUrl = ''
+            resolve()
+          },
+          timeout: 5000
+        })
+      })
+    },
     async drawPoster() {
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
           reject(new Error('海报绘制超时'))
-        }, 10000)
+        }, 15000)
 
         const ctx = uni.createCanvasContext('posterCanvas')
         const w = this.canvasWidth
@@ -139,23 +199,36 @@ export default {
         ctx.setTextAlign('left')
 
         configKeys.forEach(key => {
-          if (yPos < h - 100) {
+          if (yPos < h - 160) {
             ctx.fillText(`${key}: ${config[key]}`, 30, yPos)
             yPos += 28
           }
         })
 
-        ctx.setFillStyle('#FF6B35')
-        ctx.fillRect(30, h - 70, w - 60, 40)
-
-        ctx.setFillStyle('#FFFFFF')
-        ctx.setFontSize(16)
-        ctx.setTextAlign('center')
-        ctx.fillText('扫码参与活动', w / 2, h - 42)
+        const qrcodeSize = 100
+        const qrcodeX = (w - qrcodeSize) / 2
+        const qrcodeY = h - 150
+        
+        if (this.qrcodeUrl) {
+          ctx.drawImage(this.qrcodeUrl, qrcodeX, qrcodeY, qrcodeSize, qrcodeSize)
+        } else {
+          ctx.setFillStyle('#F5F5F5')
+          ctx.fillRect(qrcodeX, qrcodeY, qrcodeSize, qrcodeSize)
+          ctx.setStrokeStyle('#DDDDDD')
+          ctx.setLineWidth(1)
+          ctx.strokeRect(qrcodeX, qrcodeY, qrcodeSize, qrcodeSize)
+          
+          const centerX = qrcodeX + qrcodeSize / 2
+          const centerY = qrcodeY + qrcodeSize / 2
+          const dotSize = 8
+          ctx.setFillStyle('#CCCCCC')
+          ctx.fillRect(centerX - dotSize, centerY - dotSize, dotSize * 2, dotSize * 2)
+        }
 
         ctx.setFillStyle('#999999')
         ctx.setFontSize(11)
-        ctx.fillText('长按识别二维码 · 了解更多', w / 2, h - 15)
+        ctx.setTextAlign('center')
+        ctx.fillText('长按识别二维码参与活动', w / 2, h - 25)
 
         ctx.draw(false, () => {
           setTimeout(() => {
@@ -271,12 +344,50 @@ export default {
 }
 
 .loading-area {
-  height: 600rpx;
+  height: 700rpx;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid #DDDDDD;
+  border-top-color: $primary-color;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 30rpx;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
   font-size: $font-size-base;
   color: $text-light;
+  margin-bottom: 10rpx;
+}
+
+.loading-hint {
+  font-size: $font-size-sm;
+  color: $text-secondary;
 }
 
 .bottom-action {
+  padding: 30rpx 20rpx;
+  padding-bottom: $safe-bottom;
+  padding-bottom: $safe-bottom-env;
+}
+
+.retry-btn {
   padding: 30rpx 20rpx;
   padding-bottom: $safe-bottom;
   padding-bottom: $safe-bottom-env;

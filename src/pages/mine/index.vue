@@ -51,6 +51,25 @@
         <text class="menu-arrow">›</text>
       </view>
 
+      <view class="menu-item flex-between" @click="goDashboard">
+        <view class="flex-row">
+          <text class="menu-icon">📊</text>
+          <text class="menu-text">数据看板</text>
+        </view>
+        <text class="menu-arrow">›</text>
+      </view>
+
+      <view class="menu-item flex-between" @click="goNotifications">
+        <view class="flex-row">
+          <text class="menu-icon">🔔</text>
+          <text class="menu-text">消息中心</text>
+        </view>
+        <view class="menu-right">
+          <text class="menu-badge" v-if="unreadCount > 0">{{ unreadCount }}</text>
+          <text class="menu-arrow">›</text>
+        </view>
+      </view>
+
       <view class="menu-item flex-between">
         <view class="flex-row">
           <text class="menu-icon">📖</text>
@@ -75,12 +94,17 @@
 </template>
 
 <script>
+import { onShow } from '@dcloudio/uni-app'
 import { getOverviewStats } from '@/common/api.js'
 import { mapState } from 'vuex'
+import { notificationService } from '@/common/notification.js'
 
 export default {
   computed: {
-    ...mapState(['shopInfo'])
+    ...mapState(['shopInfo']),
+    unreadCount() {
+      return notificationService.getUnreadCount()
+    }
   },
   data() {
     return {
@@ -88,11 +112,20 @@ export default {
         activeActivityCount: 0,
         totalCustomerCount: 0,
         totalScanCount: 0
-      }
+      },
+      unsubscribe: null
     }
   },
   onShow() {
     this.loadOverview()
+    this.unsubscribe = notificationService.subscribe(() => {
+      this.$forceUpdate()
+    })
+  },
+  onUnmounted() {
+    if (this.unsubscribe) {
+      this.unsubscribe()
+    }
   },
   methods: {
     async loadOverview() {
@@ -118,6 +151,16 @@ export default {
     switchTabCustomer() {
       uni.switchTab({
         url: '/pages/customer/list'
+      })
+    },
+    goNotifications() {
+      uni.navigateTo({
+        url: '/pages/mine/notifications'
+      })
+    },
+    goDashboard() {
+      uni.navigateTo({
+        url: '/pages/dashboard/index'
       })
     }
   }
@@ -211,6 +254,25 @@ export default {
     .menu-arrow {
       font-size: 36rpx;
       color: $text-light;
+    }
+
+    .menu-right {
+      display: flex;
+      align-items: center;
+    }
+
+    .menu-badge {
+      min-width: 32rpx;
+      height: 32rpx;
+      background: #FF4757;
+      color: #FFFFFF;
+      font-size: 20rpx;
+      border-radius: 16rpx;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 8rpx;
+      padding: 0 8rpx;
     }
   }
 }

@@ -4,88 +4,128 @@
       "path": "pages/index/index",
       "style": {
         "navigationBarTitleText": "营多多",
-        "navigationBarBackgroundColor": "#FF6B35",
-        "navigationBarTextStyle": "white"
+        "navigationStyle": "custom"
       }
     },
     {
-      "path": "pages/activity/create",
+      "path": "pages/shop/products",
       "style": {
-        "navigationBarTitleText": "创建活动",
-        "navigationBarBackgroundColor": "#FF6B35",
-        "navigationBarTextStyle": "white"
+        "navigationBarTitleText": "店铺",
+        "navigationStyle": "custom"
       }
     },
     {
-      "path": "pages/activity/detail",
+      "path": "pages/shop/add-product",
       "style": {
-        "navigationBarTitleText": "活动详情",
-        "navigationBarBackgroundColor": "#FF6B35",
-        "navigationBarTextStyle": "white"
+        "navigationBarTitleText": "上架商品",
+        "navigationStyle": "custom"
       }
     },
     {
-      "path": "pages/activity/stats",
+      "path": "pages/shop/product-detail",
       "style": {
-        "navigationBarTitleText": "活动效果",
-        "navigationBarBackgroundColor": "#FF6B35",
-        "navigationBarTextStyle": "white"
+        "navigationBarTitleText": "商品详情",
+        "navigationStyle": "custom"
       }
     },
     {
-      "path": "pages/activity/join",
+      "path": "pages/shop/orders",
       "style": {
-        "navigationBarTitleText": "参与活动",
-        "navigationBarBackgroundColor": "#FF6B35",
-        "navigationBarTextStyle": "white"
+        "navigationBarTitleText": "订单管理",
+        "navigationStyle": "custom"
       }
     },
     {
-      "path": "pages/poster/preview",
+      "path": "pages/shop/order-detail",
       "style": {
-        "navigationBarTitleText": "海报预览",
-        "navigationBarBackgroundColor": "#FF6B35",
-        "navigationBarTextStyle": "white"
+        "navigationBarTitleText": "订单详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/marketing/group-buy",
+      "style": {
+        "navigationBarTitleText": "邻里拼团",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/marketing/share-gift",
+      "style": {
+        "navigationBarTitleText": "分享有礼",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/marketing/subscribe",
+      "style": {
+        "navigationBarTitleText": "周期购",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/marketing/group-order",
+      "style": {
+        "navigationBarTitleText": "社群接龙",
+        "navigationStyle": "custom"
       }
     },
     {
       "path": "pages/customer/list",
       "style": {
-        "navigationBarTitleText": "客户列表",
-        "navigationBarBackgroundColor": "#FF6B35",
-        "navigationBarTextStyle": "white"
+        "navigationBarTitleText": "客户管理",
+        "navigationStyle": "custom"
       }
     },
     {
       "path": "pages/customer/detail",
       "style": {
         "navigationBarTitleText": "客户详情",
-        "navigationBarBackgroundColor": "#FF6B35",
-        "navigationBarTextStyle": "white"
+        "navigationStyle": "custom"
       }
     },
     {
-      "path": "pages/shop/config",
+      "path": "pages/customer/coupons",
       "style": {
-        "navigationBarTitleText": "店铺设置",
-        "navigationBarBackgroundColor": "#FF6B35",
-        "navigationBarTextStyle": "white"
+        "navigationBarTitleText": "发券中心",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/dashboard/index",
+      "style": {
+        "navigationBarTitleText": "经营小报",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/dashboard/inventory",
+      "style": {
+        "navigationBarTitleText": "库存管理",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/dashboard/distribution",
+      "style": {
+        "navigationBarTitleText": "分销管理",
+        "navigationStyle": "custom"
       }
     },
     {
       "path": "pages/mine/index",
       "style": {
         "navigationBarTitleText": "我的",
-        "navigationBarBackgroundColor": "#FF6B35",
-        "navigationBarTextStyle": "white"
+        "navigationStyle": "custom"
       }
     }
   ],
   "globalStyle": {
-    "navigationBarTextStyle": "white",
+    "navigationBarTextStyle": "black",
     "navigationBarTitleText": "营多多",
-    "navigationBarBackgroundColor": "#FF6B35",
-    "backgroundColor": "#F5F5F5"
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F5F5F5",
+    "backgroundTextStyle": "dark"
   },
   "tabBar": {
     "color": "#999999",
@@ -100,10 +140,22 @@
         "selectedIconPath": "static/images/tab-home-active.png"
       },
       {
+        "pagePath": "pages/shop/products",
+        "text": "店铺",
+        "iconPath": "static/images/tab-home.png",
+        "selectedIconPath": "static/images/tab-home-active.png"
+      },
+      {
         "pagePath": "pages/customer/list",
         "text": "客户",
         "iconPath": "static/images/tab-customer.png",
         "selectedIconPath": "static/images/tab-customer-active.png"
+      },
+      {
+        "pagePath": "pages/dashboard/index",
+        "text": "报表",
+        "iconPath": "static/images/tab-home.png",
+        "selectedIconPath": "static/images/tab-home-active.png"
       },
       {
         "pagePath": "pages/mine/index",
